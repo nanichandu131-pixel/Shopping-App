@@ -1,0 +1,30 @@
+{
+    "name": "smartprice-compare",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Production-ready price comparison platform with React, Node, MongoDB, Redis, and pluggable store providers.",
+    "workspaces": [
+        "backend",
+        "frontend"
+    ],
+    "scripts": {
+        "dev": "concurrently -n backend,frontend -c cyan,green \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+        "dev:backend": "npm run dev --workspace backend",
+        "dev:frontend": "npm run dev --workspace frontend",
+        "build": "npm run build --workspace frontend",
+        "server": "npm run start --workspace backend",
+        "start": "npm run start --workspace backend",
+        "lint": "npm run lint --workspace backend && npm run lint --workspace frontend",
+        "build:embed-backend": "npm run build --workspace frontend && node scripts/embed-frontend.js",
+        "docker:build:backend-with-frontend": "npm run build:embed-backend && docker build -t smartprice/backend -f backend/Dockerfile backend",
+        "seed:backend": "npm run seed --workspace backend",
+        "test:ui": "node scripts/verify-ui.js"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1",
+        "playwright-chromium": "^1.36.0"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    }
+}

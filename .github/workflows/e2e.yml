@@ -1,0 +1,56 @@
+name: E2E smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'" --health-interval=10s --health-timeout=5s --health-retries=5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Build frontend
+        run: npm run build --workspace frontend
+      - name: Embed frontend into backend
+        run: node scripts/embed-frontend.js
+      - name: Seed database
+        env:
+          MONGODB_URI: mongodb://localhost:27017/smartprice_compare
+        run: npm run seed:backend
+      - name: Start backend (production)
+        env:
+          NODE_ENV: production
+          PORT: 5000
+          MONGODB_URI: mongodb://localhost:27017/smartprice_compare
+        run: |
+          npm run start --workspace backend &
+          echo "Waiting for backend to be healthy..."
+          for i in {1..30}; do
+            if curl -sSf http://localhost:5000/health >/dev/null; then
+              echo "Backend healthy"
+              break
+            fi
+            sleep 2
+          done
+      - name: Run E2E runner
+        env:
+          API_URL: http://localhost:5000
+          FRONTEND_URL: http://localhost:5000
+        run: node backend/tests/e2e/run-e2e.cjs

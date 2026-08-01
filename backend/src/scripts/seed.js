@@ -841,6 +841,8 @@ async function seed() {
                 specifications: specs || [],
                 category: catMap[category],
                 brand: brandMap[brand],
+                basePrice: price || 0,
+                baseMrp: mrp || price || 0,
                 rating: { average: rating || 4.0, count: Math.floor(Math.random() * 500) + 50 },
                 searchKeywords: [rest.title.toLowerCase(), ...rest.title.toLowerCase().split(' ')],
                 tags: [category.toLowerCase(), brand.toLowerCase(), ...rest.title.toLowerCase().split(' ').slice(0, 3)],
