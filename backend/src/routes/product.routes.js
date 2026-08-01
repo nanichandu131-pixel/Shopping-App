@@ -4,13 +4,13 @@ import { productController } from '../controllers/product.controller.js';
 import { authenticate, authorize, optionalAuth } from '../middleware/auth.middleware.js';
 import { cacheResponse } from '../middleware/cache.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
-import { mongoIdParam, productSearchRules } from '../validators/common.validators.js';
+import { mongoIdParam, productCreateRules, productSearchRules } from '../validators/common.validators.js';
 
 export const productRouter = Router();
 export const comparisonRouter = Router();
 
 productRouter.get('/', optionalAuth, productSearchRules, validate, cacheResponse(120), productController.search);
-productRouter.post('/', authenticate, authorize('admin', 'manager'), productController.create);
+productRouter.post('/', authenticate, authorize('admin', 'manager'), productCreateRules, validate, productController.create);
 productRouter.get('/deals', cacheResponse(120), productController.deals);
 productRouter.get('/:id', optionalAuth, mongoIdParam(), validate, productController.getById);
 productRouter.patch('/:id', authenticate, authorize('admin', 'manager'), mongoIdParam(), validate, productController.update);

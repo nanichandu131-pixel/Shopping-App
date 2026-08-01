@@ -15,6 +15,12 @@ class ProductRepository extends BaseRepository {
 
     if (queryParams.category) filter.category = queryParams.category;
     if (queryParams.brand) filter.brand = queryParams.brand;
+    if (queryParams.minRating) filter['rating.average'] = { $gte: Number(queryParams.minRating) };
+    if (queryParams.minPrice || queryParams.maxPrice) {
+      filter.basePrice = {};
+      if (queryParams.minPrice) filter.basePrice.$gte = Number(queryParams.minPrice);
+      if (queryParams.maxPrice) filter.basePrice.$lte = Number(queryParams.maxPrice);
+    }
     return this.list(filter, queryParams, ['category', 'brand']);
   }
 

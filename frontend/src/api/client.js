@@ -23,6 +23,9 @@ api.interceptors.response.use(
           const { data } = await api.post('/auth/refresh', { refreshToken });
           localStorage.setItem('sp_access_token', data.accessToken);
           localStorage.setItem('sp_refresh_token', data.refreshToken);
+          const { store } = await import('../store/index.js');
+          const { setAccessToken } = await import('../store/slices/authSlice.js');
+          store.dispatch(setAccessToken(data.accessToken));
           original.headers.Authorization = `Bearer ${data.accessToken}`;
           return api(original);
         } catch {

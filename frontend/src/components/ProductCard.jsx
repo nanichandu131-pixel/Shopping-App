@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -14,39 +14,16 @@ export default function ProductCard({ product, offer }) {
   const id = item?._id || item?.id;
   const productId = product?._id || offer?.product?._id;
   const [imgError, setImgError] = useState(false);
-  const [livePrice, setLivePrice] = useState(null);
-  const [priceDiff, setPriceDiff] = useState(null);
 
-  // Get base price from product or offer
   const getBasePrice = () => {
-    // First check offer price
     if (offer?.price?.amount) return offer.price.amount;
-    // Then check product price from store offers
     if (item?.price?.amount) return item.price.amount;
-    // Then check basePrice on product model
     if (item?.basePrice) return item.basePrice;
-    // Check if item has direct price numeric property
     if (typeof item?.price === 'number') return item.price;
-    // Check if item has price object with amount
-    if (item?.price?.amount) return item.price.amount;
     return null;
   };
 
   const basePrice = getBasePrice();
-
-  // Simulate real-time price updates
-  useEffect(() => {
-    if (!basePrice) return;
-    
-    const interval = setInterval(() => {
-      const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
-      const newPrice = basePrice * (1 + variation);
-      setLivePrice(newPrice);
-      setPriceDiff(newPrice - basePrice);
-    }, 30000 + Math.random() * 30000); // 30-60 seconds
-
-    return () => clearInterval(interval);
-  }, [basePrice]);
 
   const save = async () => {
     if (!accessToken || !productId) return;
@@ -57,7 +34,7 @@ export default function ProductCard({ product, offer }) {
     api.post('/analytics/events', { eventType: 'buy_click', product: productId, store: offer?.store?._id }).catch(() => {});
   };
 
-  const displayPrice = livePrice || basePrice;
+  const displayPrice = basePrice;
   const displayCurrency = offer?.price?.currency || item?.price?.currency || 'INR';
 
   const formatPrice = (price) => {
@@ -97,11 +74,6 @@ export default function ProductCard({ product, offer }) {
         <div>
           <p className="font-black text-mint">{formatPrice(priceObj)}</p>
           {offer?.store?.name && <p className="text-xs text-zinc-500">{offer.store.name}</p>}
-          {priceDiff !== null && priceDiff !== 0 && (
-            <span className={`text-xs ${priceDiff > 0 ? 'text-rose-500' : 'text-emerald-500'} animate-pulse`}>
-              {priceDiff > 0 ? '↑' : '↓'} {Math.abs(priceDiff) > 0 ? 'Live' : ''}
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-1 text-xs text-zinc-500">
           <Star size={14} className="fill-saffron text-saffron" />

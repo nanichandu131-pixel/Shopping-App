@@ -11,9 +11,12 @@ export const buildSort = (sort = '-createdAt') =>
     .filter(Boolean)
     .join(' ');
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const buildTextFilter = (query, fields = ['name']) => {
   if (!query.q) return {};
+  const safeQuery = escapeRegExp(String(query.q));
   return {
-    $or: fields.map((field) => ({ [field]: { $regex: String(query.q), $options: 'i' } }))
+    $or: fields.map((field) => ({ [field]: { $regex: safeQuery, $options: 'i' } }))
   };
 };
