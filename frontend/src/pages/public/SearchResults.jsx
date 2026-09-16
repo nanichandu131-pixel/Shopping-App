@@ -8,28 +8,6 @@ import EmptyState from '../../components/EmptyState.jsx';
 import { api } from '../../api/client.js';
 import { SlidersHorizontal, ChevronDown, X, Filter } from 'lucide-react';
 
-const STORE_LOGOS = {
-  amazon: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
-  flipkart: 'https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/flipkart-plus_8d85f4.png',
-  croma: 'https://www.croma.com/croma-logo.svg',
-  reliancedigital: 'https://www.reliancedigital.in/build/client/images/logo.png',
-  vijaysales: 'https://www.vijaysales.com/themes/custom/vs_theme/logo.svg',
-  tatacliq: 'https://www.tatacliq.com/logo.svg',
-  myntra: 'https://www.myntra.com/favicon.ico',
-  ajio: 'https://www.ajio.com/favicon.ico',
-  meesho: 'https://www.meesho.com/favicon.ico',
-  snapdeal: 'https://www.snapdeal.com/favicon.ico',
-  applestore: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg',
-  samsungstore: 'https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg',
-  vivostore: 'https://upload.wikimedia.org/wikipedia/commons/9/92/Vivo_Logo.svg',
-  oppostore: 'https://upload.wikimedia.org/wikipedia/commons/4/47/OPPO_Logo.svg',
-  xiaomistore: 'https://upload.wikimedia.org/wikipedia/commons/a/ae/Xiaomi_logo.svg',
-  oneplusstore: 'https://upload.wikimedia.org/wikipedia/commons/7/7d/OnePlus_logo.svg',
-  realmestore: 'https://upload.wikimedia.org/wikipedia/commons/8/8d/Realme_Logo.svg',
-  motorolastore: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Motorola_logo.svg',
-  ipoint: 'https://www.ipoint.in/favicon.ico'
-};
-
 export default function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get('q') || '';

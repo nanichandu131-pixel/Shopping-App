@@ -4,10 +4,12 @@ import { api } from '../../api/client.js';
 import ProductCard from '../../components/ProductCard.jsx';
 import Skeleton from '../../components/Skeleton.jsx';
 import { ChevronRight, Star, TrendingUp, Zap, ShoppingBag } from 'lucide-react';
+import { LOCAL_PLACEHOLDER_IMAGE } from '../../utils/imageFallback.js';
+import { buildSrcSet, resizeImageUrl } from '../../utils/responsiveImage.js';
 
 const heroSlides = [
   {
-    img: 'https://images.unsplash.com/photo-1607082349566-187342175e2f?auto=format&fit=crop&w=1800&q=80',
+    img: 'https://media.slidesgo.com/storage/22965248/online-shopping-mk-plan1657864463.jpg',
     title: 'Biggest Deals of the Season',
     subtitle: 'Up to 70% off on Electronics, Fashion & More',
     cta: 'Shop Now',
@@ -30,14 +32,14 @@ const heroSlides = [
 ];
 
 const categoryGrid = [
-  { name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop', link: '/search?q=mobiles' },
-  { name: 'Laptops', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop', link: '/search?q=laptops' },
-  { name: 'Smart Watches', img: 'https://images.unsplash.com/photo-1523278685689-4f7a0b0c3d8e?w=200&h=200&fit=crop', link: '/search?q=smart+watches' },
-  { name: 'Headphones', img: 'https://images.unsplash.com/photo-1583394833952-9c6b2b0c7d4a?w=200&h=200&fit=crop', link: '/search?q=headphones' },
-  { name: 'Shoes', img: 'https://images.unsplash.com/photo-1542299822-8e5e8f4c3d2a?w=200&h=200&fit=crop', link: '/search?q=shoes' },
-  { name: 'Cameras', img: 'https://images.unsplash.com/photo-1510124475477-5d7e1f8e9c3a?w=200&h=200&fit=crop', link: '/search?q=cameras' },
-  { name: 'Smart TVs', img: 'https://images.unsplash.com/photo-1593359674512-3d5e6f7a8b9c?w=200&h=200&fit=crop', link: '/search?q=smart+tvs' },
-  { name: 'Fashion', img: 'https://images.unsplash.com/photo-1556909114-5c3d4e5f6a7b?w=200&h=200&fit=crop', link: '/search?q=fashion' },
+  { name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=300&h=300&fit=crop&q=80', link: '/search?q=mobiles' },
+  { name: 'Laptops', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=300&fit=crop&q=80', link: '/search?q=laptops' },
+  { name: 'Smart Watches', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop&q=80', link: '/search?q=smart+watches' },
+  { name: 'Headphones', img: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop&q=80', link: '/search?q=headphones' },
+  { name: 'Shoes', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300&h=300&fit=crop&q=80', link: '/search?q=shoes' },
+  { name: 'Cameras', img: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=300&h=300&fit=crop&q=80', link: '/search?q=cameras' },
+  { name: 'Smart TVs', img: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=300&h=300&fit=crop&q=80', link: '/search?q=smart+tvs' },
+  { name: 'Fashion', img: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=300&h=300&fit=crop&q=80', link: '/search?q=fashion' },
 ];
 
 export default function Home() {
@@ -79,9 +81,13 @@ export default function Home() {
             >
               <img
                 src={slide.img}
+                srcSet={buildSrcSet(slide.img, [640, 1200, 1800])}
+                sizes="100vw"
                 alt=""
                 className="h-[300px] w-full object-cover md:h-[400px] lg:h-[500px]"
                 loading={idx === 0 ? 'eager' : 'lazy'}
+                fetchpriority={idx === 0 ? 'high' : undefined}
+                decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12">
@@ -126,7 +132,16 @@ export default function Home() {
               className="group rounded-lg border border-zinc-200 bg-white p-3 text-center transition hover:-translate-y-1 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
             >
               <div className="mx-auto h-20 w-20 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
-                <img src={cat.img} alt={cat.name} className="h-full w-full object-cover transition group-hover:scale-110" loading="lazy" />
+                <img
+                  src={resizeImageUrl(cat.img, 160)}
+                  srcSet={buildSrcSet(cat.img, [80, 160, 240])}
+                  sizes="80px"
+                  alt={cat.name}
+                  className="h-full w-full object-cover transition group-hover:scale-110"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = LOCAL_PLACEHOLDER_IMAGE; }}
+                />
               </div>
               <p className="mt-2 text-sm font-semibold">{cat.name}</p>
             </Link>

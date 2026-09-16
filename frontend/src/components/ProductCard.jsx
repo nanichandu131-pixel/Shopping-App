@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { api } from '../api/client.js';
-
-const FALLBACK_IMAGE = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22 fill=%22%23e4e4e7%22%3E%3Crect width=%22400%22 height=%22400%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 font-size=%2216%22 fill=%22%23a1a1aa%22%3ENo Image%3C/text%3E%3C/svg%3E';
+import { buildImageFallbackChain } from '../utils/imageFallback.js';
+import { buildSrcSet, resizeImageUrl } from '../utils/responsiveImage.js';
 
 export default function ProductCard({ product, offer }) {
   const accessToken = useSelector((state) => state.auth.accessToken);
@@ -13,7 +13,9 @@ export default function ProductCard({ product, offer }) {
   const image = item?.images?.[0]?.url || item?.imageUrl || offer?.imageUrl;
   const id = item?._id || item?.id;
   const productId = product?._id || offer?.product?._id;
-  const [imgError, setImgError] = useState(false);
+  const fallbackChain = useMemo(() => buildImageFallbackChain(image, item), [image, item]);
+  const [imgStage, setImgStage] = useState(0);
+  const displayImage = fallbackChain[Math.min(imgStage, fallbackChain.length - 1)];
 
   const getBasePrice = () => {
     if (offer?.price?.amount) return offer.price.amount;
@@ -54,19 +56,16 @@ export default function ProductCard({ product, offer }) {
     <article className="group rounded-lg border border-zinc-200 bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-soft dark:border-zinc-800 dark:bg-zinc-900">
       <Link to={id ? `/products/${id}` : '/search'} className="block">
         <div className="aspect-square overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
-          {image && !imgError ? (
-            <img
-              src={image}
-              alt={title}
-              className="h-full w-full object-contain transition group-hover:scale-105"
-              loading="lazy"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="grid h-full place-items-center px-4 text-center text-sm text-zinc-400">
-              <img src={FALLBACK_IMAGE} alt="" className="h-full w-full object-contain" />
-            </div>
-          )}
+          <img
+            src={resizeImageUrl(displayImage, 300)}
+            srcSet={buildSrcSet(displayImage, [150, 300, 450])}
+            sizes="(min-width: 1024px) 240px, (min-width: 640px) 200px, 45vw"
+            alt={title}
+            className="h-full w-full object-contain transition group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            onError={() => setImgStage((stage) => Math.min(stage + 1, fallbackChain.length - 1))}
+          />
         </div>
         <h3 className="mt-3 line-clamp-2 min-h-11 text-sm font-bold">{title}</h3>
       </Link>

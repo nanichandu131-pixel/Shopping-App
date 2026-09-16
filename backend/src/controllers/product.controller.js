@@ -1,10 +1,26 @@
-import { PriceHistory, Product, Review } from '../models/index.js';
+import { Category, PriceHistory, Product, Review } from '../models/index.js';
 import { productRepository } from '../repositories/product.repository.js';
 import { productService } from '../services/product.service.js';
 import { recommendationService } from '../services/recommendation.service.js';
 import { AppError } from '../utils/AppError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { delCachePattern } from '../utils/cache.js';
+import { getCategoryImage } from '../utils/categoryImages.js';
+
+// A product created without its own image gets one auto-assigned from its
+// category's verified image pool, so the catalog never shows a broken image
+// or an image unrelated to the product (e.g. a mobile phone never gets a
+// clothing photo). Falls back to the title alone if no category is set yet.
+const withCategoryImageFallback = async (body) => {
+  if (Array.isArray(body.images) && body.images.length > 0) return body;
+  let categoryName = null;
+  if (body.category) {
+    const category = await Category.findById(body.category).select('name').lean();
+    categoryName = category?.name || null;
+  }
+  const url = getCategoryImage(categoryName, body.title || categoryName);
+  return { ...body, images: [{ url, alt: body.title || 'Product image', sortOrder: 0 }] };
+};
 
 export const productController = {
   search: asyncHandler(async (req, res) => {
@@ -12,7 +28,8 @@ export const productController = {
     res.json(data);
   }),
   create: asyncHandler(async (req, res) => {
-    const product = await Product.create(req.body);
+    const data = await withCategoryImageFallback(req.body);
+    const product = await Product.create(data);
     await delCachePattern('http:/api/products*');
     res.status(201).json({ product });
   }),

@@ -25,7 +25,16 @@ class ProductRepository extends BaseRepository {
   }
 
   getStoreOffers(productId) {
-    return StoreProduct.find({ product: productId })
+    // Only ever return offers that are actually available and complete —
+    // an out-of-stock listing isn't a store the product is really "in",
+    // and an offer missing its price/url/image isn't safe to render.
+    return StoreProduct.find({
+      product: productId,
+      availability: { $ne: 'out_of_stock' },
+      url: { $exists: true, $ne: '' },
+      'price.amount': { $exists: true, $gt: 0 },
+      imageUrl: { $exists: true, $ne: '' }
+    })
       .populate('store')
       .sort({ 'price.amount': 1, availability: 1 });
   }

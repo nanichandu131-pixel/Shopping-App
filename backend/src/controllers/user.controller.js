@@ -21,7 +21,9 @@ export const userController = {
     res.json({ user });
   }),
   wishlist: asyncHandler(async (req, res) => {
-    const items = await Wishlist.find({ user: req.user.id }).populate('product').sort({ createdAt: -1 });
+    const items = await Wishlist.find({ user: req.user.id })
+      .populate({ path: 'product', populate: 'category brand' })
+      .sort({ createdAt: -1 });
     res.json({ items });
   }),
   addWishlist: asyncHandler(async (req, res) => {
@@ -30,7 +32,7 @@ export const userController = {
       { user: req.user.id, product: req.body.product },
       { notes: req.body.notes },
       { upsert: true, new: true, setDefaultsOnInsert: true }
-    ).populate('product');
+    ).populate({ path: 'product', populate: 'category brand' });
     if (!exists) Product.updateOne({ _id: req.body.product }, { $inc: { 'stats.wishlistCount': 1 } }).catch(() => {});
     Analytics.create({ eventType: 'wishlist', user: req.user.id, product: req.body.product }).catch(() => {});
     res.status(201).json({ item });
@@ -57,7 +59,9 @@ export const userController = {
     res.status(204).send();
   }),
   alerts: asyncHandler(async (req, res) => {
-    const items = await PriceAlert.find({ user: req.user.id }).populate('product').sort({ createdAt: -1 });
+    const items = await PriceAlert.find({ user: req.user.id })
+      .populate({ path: 'product', populate: 'category brand' })
+      .sort({ createdAt: -1 });
     res.json({ items });
   }),
   createAlert: asyncHandler(async (req, res) => {
@@ -88,7 +92,7 @@ export const userController = {
   }),
   recentlyViewed: asyncHandler(async (req, res) => {
     const items = await RecentlyViewed.find({ user: req.user.id })
-      .populate('product')
+      .populate({ path: 'product', populate: 'category brand' })
       .sort({ viewedAt: -1 })
       .limit(30);
     res.json({ items });

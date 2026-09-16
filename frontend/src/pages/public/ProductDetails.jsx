@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, Link } from 'react-router-dom';
 import { fetchProduct, fetchComparison } from '../../store/slices/productSlice.js';
@@ -7,6 +7,9 @@ import PriceHistoryChart from '../../components/PriceHistoryChart.jsx';
 import ProductCard from '../../components/ProductCard.jsx';
 import Skeleton from '../../components/Skeleton.jsx';
 import { api } from '../../api/client.js';
+import { buildImageFallbackChain } from '../../utils/imageFallback.js';
+import { buildSrcSet, resizeImageUrl } from '../../utils/responsiveImage.js';
+import { isValidHttpUrl } from '../../utils/validateUrl.js';
 import { ShoppingCart, Star, Heart, Share2, ChevronLeft, ChevronRight, Check, Truck, RotateCcw, Shield, Clock } from 'lucide-react';
 
 export default function ProductDetails() {
@@ -15,6 +18,7 @@ export default function ProductDetails() {
   const { selected, comparison } = useSelector((state) => state.products);
   const { user } = useSelector((state) => state.auth);
   const [activeImage, setActiveImage] = useState(0);
+  const [imgStage, setImgStage] = useState(0);
   const [similar, setSimilar] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +26,7 @@ export default function ProductDetails() {
   useEffect(() => {
     setLoading(true);
     setActiveImage(0);
+    setImgStage(0);
     Promise.all([
       dispatch(fetchProduct(id)),
       dispatch(fetchComparison(id)),
@@ -40,6 +45,11 @@ export default function ProductDetails() {
   const history = selected?.priceHistory || [];
   const images = product?.images || [];
   const specs = product?.specifications || [];
+  const fallbackChain = useMemo(
+    () => buildImageFallbackChain(images[activeImage]?.url, product),
+    [images, activeImage, product]
+  );
+  const displayImage = fallbackChain[Math.min(imgStage, fallbackChain.length - 1)];
 
   if (loading) {
     return (
@@ -89,25 +99,27 @@ export default function ProductDetails() {
         {/* Image Gallery */}
         <div>
           <div className="relative aspect-square overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-            {images.length > 0 ? (
-              <img
-                src={images[activeImage]?.url}
-                alt={images[activeImage]?.alt || product.title}
-                className="h-full w-full object-contain p-4"
-              />
-            ) : (
-              <div className="grid h-full place-items-center text-zinc-400">No image available</div>
-            )}
+            <img
+              src={resizeImageUrl(displayImage, 800)}
+              srcSet={buildSrcSet(displayImage, [400, 800, 1200])}
+              sizes="(min-width: 1024px) 500px, 100vw"
+              alt={images[activeImage]?.alt || product.title}
+              className="h-full w-full object-contain p-4"
+              loading="eager"
+              fetchpriority="high"
+              decoding="async"
+              onError={() => setImgStage((stage) => Math.min(stage + 1, fallbackChain.length - 1))}
+            />
             {images.length > 1 && (
               <>
                 <button
-                  onClick={() => setActiveImage((prev) => (prev - 1 + images.length) % images.length)}
+                  onClick={() => { setActiveImage((prev) => (prev - 1 + images.length) % images.length); setImgStage(0); }}
                   className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 shadow hover:bg-white dark:bg-zinc-800/80"
                 >
                   <ChevronLeft size={20} />
                 </button>
                 <button
-                  onClick={() => setActiveImage((prev) => (prev + 1) % images.length)}
+                  onClick={() => { setActiveImage((prev) => (prev + 1) % images.length); setImgStage(0); }}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 shadow hover:bg-white dark:bg-zinc-800/80"
                 >
                   <ChevronRight size={20} />
@@ -121,12 +133,19 @@ export default function ProductDetails() {
               {images.map((img, idx) => (
                 <button
                   key={idx}
-                  onClick={() => setActiveImage(idx)}
+                  onClick={() => { setActiveImage(idx); setImgStage(0); }}
                   className={`h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border-2 transition ${
                     idx === activeImage ? 'border-mint' : 'border-transparent'
                   }`}
                 >
-                  <img src={img.url} alt="" className="h-full w-full object-contain" />
+                  <img
+                    src={resizeImageUrl(img.url, 100)}
+                    alt=""
+                    className="h-full w-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => { e.currentTarget.src = fallbackChain[fallbackChain.length - 1]; }}
+                  />
                 </button>
               ))}
             </div>
@@ -139,6 +158,9 @@ export default function ProductDetails() {
             <p className="text-sm font-semibold text-mint">{product.brand.name}</p>
           )}
           <h1 className="mt-1 text-2xl font-black leading-tight lg:text-3xl">{product.title}</h1>
+          {product.modelNumber && (
+            <p className="mt-1 text-sm text-zinc-500">Model: {product.modelNumber}</p>
+          )}
 
           {/* Rating */}
           <div className="mt-3 flex items-center gap-3">
@@ -186,7 +208,7 @@ export default function ProductDetails() {
 
           {/* Action Buttons */}
           <div className="mt-6 flex flex-wrap gap-3">
-            {bestOffer?.url ? (
+            {bestOffer?.url && isValidHttpUrl(bestOffer.url) ? (
               <a
                 href={bestOffer.url}
                 target="_blank"
@@ -252,7 +274,7 @@ export default function ProductDetails() {
       {/* Store Comparison */}
       <section className="mt-10">
         <h2 className="mb-4 text-2xl font-black">Compare Prices Across Stores</h2>
-        <ComparisonTable comparison={comparison} />
+        <ComparisonTable comparison={comparison} product={product} />
       </section>
 
       {/* Price History */}

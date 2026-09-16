@@ -5,12 +5,8 @@ import { logoutLocal } from '../store/slices/authSlice.js';
 import { toggleTheme } from '../store/slices/uiSlice.js';
 import { Search, Menu, ShoppingCart, User, ChevronDown, Heart, Bell, Shield, Sun, Moon, LogOut } from 'lucide-react';
 import { api } from '../api/client.js';
-
-const storeLogos = {
-  amazon: 'https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg',
-  flipkart: 'https://static-assets-web.flixcart.com/fk-p-linchpin-web/fk-cp-zion/img/flipkart-plus_8d85f4.png',
-  croma: 'https://www.croma.com/croma-logo.svg',
-};
+import { buildImageFallbackChain } from '../utils/imageFallback.js';
+import { resizeImageUrl } from '../utils/responsiveImage.js';
 
 export default function Navbar({ onMenuToggle }) {
   const { user } = useSelector((state) => state.auth);
@@ -117,9 +113,20 @@ export default function Navbar({ onMenuToggle }) {
                     onClick={() => setShowSuggestions(false)}
                     className="flex items-center gap-3 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
-                    {product.images?.[0]?.url && (
-                      <img src={product.images[0].url} alt="" className="h-8 w-8 rounded object-cover" />
-                    )}
+                    <img
+                      src={resizeImageUrl(buildImageFallbackChain(product.images?.[0]?.url, product)[0], 64)}
+                      alt=""
+                      className="h-8 w-8 rounded object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      data-fallback-stage="0"
+                      onError={(e) => {
+                        const chain = buildImageFallbackChain(product.images?.[0]?.url, product);
+                        const stage = Number(e.currentTarget.dataset.fallbackStage) + 1;
+                        e.currentTarget.dataset.fallbackStage = stage;
+                        e.currentTarget.src = resizeImageUrl(chain[Math.min(stage, chain.length - 1)], 64);
+                      }}
+                    />
                     <div>
                       <p className="font-medium text-zinc-900 dark:text-white">{product.title}</p>
                       {product.brand?.name && (
@@ -216,8 +223,8 @@ export default function Navbar({ onMenuToggle }) {
             </button>
             <Link to="/deals" className="rounded px-2 py-1 hover:bg-zinc-700">Today's Deals</Link>
             <Link to="/brands" className="rounded px-2 py-1 hover:bg-zinc-700">Brands</Link>
-            <Link to="/search?q=trending" className="rounded px-2 py-1 hover:bg-zinc-700">Trending</Link>
-            <Link to="/search?q=new+arrivals" className="rounded px-2 py-1 hover:bg-zinc-700">New Arrivals</Link>
+            <Link to="/search?sort=-stats.viewCount" className="rounded px-2 py-1 hover:bg-zinc-700">Trending</Link>
+            <Link to="/search?sort=-createdAt" className="rounded px-2 py-1 hover:bg-zinc-700">New Arrivals</Link>
             <span className="flex-1" />
             {user && (
               <Link to="/notifications" className="rounded px-2 py-1 hover:bg-zinc-700">

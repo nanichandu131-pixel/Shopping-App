@@ -28,9 +28,9 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li><Link to="/brands" className="hover:text-mint">Brands</Link></li>
               <li><Link to="/deals" className="hover:text-mint">Today's Deals</Link></li>
-              <li><Link to="/search?q=trending" className="hover:text-mint">Trending</Link></li>
+              <li><Link to="/search?sort=-stats.viewCount" className="hover:text-mint">Trending</Link></li>
               <li><Link to="/wishlist" className="hover:text-mint">Wishlist</Link></li>
-              <li><Link to="/search?q=new+arrivals" className="hover:text-mint">New Arrivals</Link></li>
+              <li><Link to="/search?sort=-createdAt" className="hover:text-mint">New Arrivals</Link></li>
             </ul>
           </div>
           <div>

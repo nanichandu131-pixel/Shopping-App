@@ -16,6 +16,28 @@
                      color: #101828;
                      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
                  }
+
+                 /* Clicking plain text anywhere on the page shows the browser's
+                    native text-selection caret, which reads as "this is an
+                    editable field" even in places that aren't — across the
+                    whole site, not just headings. Disable selection globally
+                    for an app-like feel, then explicitly re-enable it for the
+                    few places people actually want to copy text from (product
+                    descriptions, prices) and for real form fields. */
+                 * {
+                     -webkit-user-select: none;
+                     user-select: none;
+                 }
+
+                 input, textarea, [contenteditable="true"] {
+                     -webkit-user-select: text;
+                     user-select: text;
+                 }
+
+                 .selectable-text, .selectable-text * {
+                     -webkit-user-select: text;
+                     user-select: text;
+                 }
                  
                  .dark body {
                      background: #0e1117;

@@ -2,14 +2,18 @@ import { Analytics, Product, StoreProduct } from '../models/index.js';
 
 class RecommendationService {
   async bestDeals(limit = 20) {
-    return StoreProduct.find({
-      availability: 'in_stock',
-      'price.amount': { $gt: 0 },
-      discountPercent: { $gt: 0 }
-    })
-      .populate('product store')
-      .sort({ discountPercent: -1, 'price.amount': 1 })
-      .limit(limit);
+    // A product can have several in-stock discounted offers (one per store),
+    // so grouping by product here keeps only its single best offer — without
+    // this, the same product shows up as multiple duplicate-looking deal cards.
+    const rows = await StoreProduct.aggregate([
+      { $match: { availability: 'in_stock', 'price.amount': { $gt: 0 }, discountPercent: { $gt: 0 } } },
+      { $sort: { discountPercent: -1, 'price.amount': 1 } },
+      { $group: { _id: '$product', doc: { $first: '$$ROOT' } } },
+      { $replaceRoot: { newRoot: '$doc' } },
+      { $sort: { discountPercent: -1, 'price.amount': 1 } },
+      { $limit: limit }
+    ]);
+    return StoreProduct.populate(rows, [{ path: 'product', populate: 'category' }, { path: 'store' }]);
   }
 
   async similarProducts(productId, limit = 12) {
